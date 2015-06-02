@@ -1,29 +1,34 @@
 'use strict'
 
 var test = require('tap').test
-var pc = require('../')
-
-var ee = pc({
-  endpoint: 'http://admin:admin@localhost:5984/tinylog',
-  since: 'now',
-  subscription: {
-    subject: ['widget'],
-    verb: ['*'],
-    type: ['response']
-  }
-})
+var rewire = require('rewire')
+var palmetto = rewire('../')
 
 test('publish', function (t) {
-  ee.on('widget/response/create', function (result) {
-    t.ok(result.object.ok)
-    t.end()
+  palmetto.__set__('request', {
+    post: function (url, options, cb) { }
   })
-  ee.emit('send', {
-    subject: 'widget',
-    verb: 'create', 
-    type: 'response',
-    object: {
-      ok: true
-    }
+
+  palmetto.__set__('follow', function (options, cb) {
+    setTimeout(function() {
+      cb(null, {
+        doc: {
+          to: 'widget/response/create',
+          object: {
+            ok: true
+          }
+        }
+      })
+    }, 0)
+  })
+
+  var ee = palmetto({
+    endpoint: 'http://admin:admin@localhost:5984/tinylog',
+    app: 'foo'
+  })
+  
+  ee.on('widget/response/create', function (result) {
+    t.ok(result.object.ok, 'notified was a success')
+    t.end()
   })
 })

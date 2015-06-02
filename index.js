@@ -9,6 +9,7 @@ module.exports = function (config) {
   var url = [config.endpoint, config.app].join('/')
   // subscribe
   follow({ db: url, include_docs: true, since: 'now' }, function (err, change) {
+    console.log(change.doc.to)
     if (err) return console.log(err)
     if (change.doc.to) ee.emit(change.doc.to, change.doc)
   })
